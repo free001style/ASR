@@ -3,6 +3,7 @@ from string import ascii_lowercase
 
 import torch
 
+
 # TODO add CTC decode
 # TODO add BPE, LM, Beam Search support
 # Note: think about metrics and encoder
