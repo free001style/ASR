@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 os.environ["HYDRA_FULL_ERROR"] = "1"
 
 
-@hydra.main(version_base=None, config_path="src/configs", config_name="deepspeech2")
+@hydra.main(version_base=None, config_path="src/configs", config_name="baseline")
 def main(config):
     """
     Main script for training. Instantiates the model, optimizer, scheduler,
