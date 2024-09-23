@@ -11,6 +11,10 @@ wandb
 comet_ml
 hydra-core
 editdistance
+datasets
+wget
+pyctcdecode
+kenlm
 
 black
 isort

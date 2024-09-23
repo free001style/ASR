@@ -1,26 +1,29 @@
 import re
 from string import ascii_lowercase
 
+import numpy as np
+
+from src.utils.io_utils import read_json
+from collections import defaultdict
+from pyctcdecode import BeamSearchDecoderCTC, Alphabet
+from src.utils.text_encoder_utils import get_lm
+
 import torch
-
-
-# TODO add BPE, LM, Beam Search support
-# Note: think about metrics and encoder
-# The design can be remarkably improved
-# to calculate stuff more efficiently and prettier
 
 
 class CTCTextEncoder:
     EMPTY_TOK = ""
 
-    def __init__(self, alphabet=None, **kwargs):
+    def __init__(self, use_bpe=False, alphabet_path=None, **kwargs):
         """
         Args:
-            alphabet (list): alphabet for language. If None, it will be
-                set to ascii
+            use_bpe (bool): whether to use bpe tokenizer instead of per letter.
+            alphabet_path (str): path to bpe alphabet.
         """
 
-        if alphabet is None:
+        if use_bpe:
+            alphabet = list(read_json(alphabet_path)['model']['vocab'])
+        else:
             alphabet = list(ascii_lowercase + " ")
 
         self.alphabet = alphabet
@@ -28,6 +31,9 @@ class CTCTextEncoder:
 
         self.ind2char = dict(enumerate(self.vocab))
         self.char2ind = {v: k for k, v in self.ind2char.items()}
+
+        lm = get_lm()
+        self.decoder = BeamSearchDecoderCTC(Alphabet(self.vocab, use_bpe), lm)
 
     def __len__(self):
         return len(self.vocab)
@@ -68,6 +74,59 @@ class CTCTextEncoder:
                 decoded.append(self.ind2char[ind])
             last_char_ind = ind
         return ''.join(decoded)
+
+    def ctc_beam_search(self, log_probs: torch.Tensor | np.array, beam_size=10):
+        """
+        Simple CTC beam search.
+
+        Args:
+            log_probs (torch.Tensor | np.array): (T x len(vocab)) tensor of token log probability.
+            beam_size (int): maximum number of beams at each step in decoding.
+        Returns:
+            output (list[dict]): list of decoded texts with their probabilities.
+        """
+        if isinstance(log_probs, torch.Tensor):
+            log_probs = log_probs.detach().cpu().numpy()
+        probs = np.exp(log_probs)
+        dp = {
+            ('', self.EMPTY_TOK): 1.0,
+        }
+        for prob in probs:
+            dp = self.__expand_end_merge_path(dp, prob)
+            dp = self.__truncate_paths(dp, beam_size)
+        dp = [{'hypothesis': prefix, 'probability': proba.item()} for (prefix, _), proba in
+              sorted(dp.items(), key=lambda x: -x[1])]
+        return dp
+
+    def ctc_lm_beam_search(self, log_probs, beam_size=10):
+        """
+        CTC beam search with LM
+
+        Args:
+            log_probs (torch.Tensor | np.array): (T x len(vocab)) tensor of token log probability.
+            beam_size (int): maximum number of beams at each step in decoding.
+        Returns:
+            output (list[dict]): list of decoded text (with probability equal 1).
+        """
+        return [{'hypothesis': self.decoder.decode(log_probs, beam_size), 'probability': 1.0}]
+
+    def __expand_end_merge_path(self, dp, next_token_probs):
+        new_dp = defaultdict(float)
+        for ind, next_token_prob in enumerate(next_token_probs):
+            cur_char = self.ind2char[ind]
+            for (prefix, last_char), v in dp.items():
+                if last_char == cur_char:
+                    new_prefix = prefix
+                else:
+                    if cur_char != self.EMPTY_TOK:
+                        new_prefix = prefix + cur_char
+                    else:
+                        new_prefix = prefix
+                new_dp[(new_prefix, cur_char)] += v * next_token_prob
+        return new_dp
+
+    def __truncate_paths(self, dp, beam_size=10):
+        return dict(sorted(list(dp.items()), key=lambda x: -x[1])[:beam_size])
 
     @staticmethod
     def normalize_text(text: str):

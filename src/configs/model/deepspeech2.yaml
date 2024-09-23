@@ -1,5 +1,5 @@
 _target_: src.model.DeepSpeech2
-n_feats: 128  # TODO потом добавить правильное (по идее n_mels)
+n_feats: 128
 fc_hidden: 768
 num_rnn: 7
 dropout: 0.0
