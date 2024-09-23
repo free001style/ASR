@@ -1,14 +1,13 @@
 import re
+from collections import defaultdict
 from string import ascii_lowercase
 
 import numpy as np
+import torch
+from pyctcdecode import Alphabet, BeamSearchDecoderCTC
 
 from src.utils.io_utils import read_json
-from collections import defaultdict
-from pyctcdecode import BeamSearchDecoderCTC, Alphabet
 from src.utils.text_encoder_utils import get_lm
-
-import torch
 
 
 class CTCTextEncoder:
@@ -22,7 +21,7 @@ class CTCTextEncoder:
         """
 
         if use_bpe:
-            alphabet = list(read_json(alphabet_path)['model']['vocab'])
+            alphabet = list(read_json(alphabet_path)["model"]["vocab"])
         else:
             alphabet = list(ascii_lowercase + " ")
 
@@ -73,9 +72,11 @@ class CTCTextEncoder:
             elif ind != self.char2ind[self.EMPTY_TOK]:
                 decoded.append(self.ind2char[ind])
             last_char_ind = ind
-        return ''.join(decoded)
+        return "".join(decoded)
 
-    def ctc_beam_search(self, log_probs: torch.Tensor | np.array, beam_size=10):
+    def ctc_beam_search(
+        self, log_probs: torch.Tensor or np.array, beam_size=10
+    ) -> list[dict[str, float]]:
         """
         Simple CTC beam search.
 
@@ -89,16 +90,20 @@ class CTCTextEncoder:
             log_probs = log_probs.detach().cpu().numpy()
         probs = np.exp(log_probs)
         dp = {
-            ('', self.EMPTY_TOK): 1.0,
+            ("", self.EMPTY_TOK): 1.0,
         }
         for prob in probs:
             dp = self.__expand_end_merge_path(dp, prob)
             dp = self.__truncate_paths(dp, beam_size)
-        dp = [{'hypothesis': prefix, 'probability': proba.item()} for (prefix, _), proba in
-              sorted(dp.items(), key=lambda x: -x[1])]
+        dp = [
+            {"hypothesis": prefix, "probability": proba.item()}
+            for (prefix, _), proba in sorted(dp.items(), key=lambda x: -x[1])
+        ]
         return dp
 
-    def ctc_lm_beam_search(self, log_probs, beam_size=10):
+    def ctc_lm_beam_search(
+        self, log_probs: torch.Tensor or np.array, beam_size=10
+    ) -> list[dict[str, float]]:
         """
         CTC beam search with LM
 
@@ -108,7 +113,12 @@ class CTCTextEncoder:
         Returns:
             output (list[dict]): list of decoded text (with probability equal 1).
         """
-        return [{'hypothesis': self.decoder.decode(log_probs, beam_size), 'probability': 1.0}]
+        return [
+            {
+                "hypothesis": self.decoder.decode(log_probs, beam_size),
+                "probability": 1.0,
+            }
+        ]
 
     def __expand_end_merge_path(self, dp, next_token_probs):
         new_dp = defaultdict(float)
@@ -125,7 +135,8 @@ class CTCTextEncoder:
                 new_dp[(new_prefix, cur_char)] += v * next_token_prob
         return new_dp
 
-    def __truncate_paths(self, dp, beam_size=10):
+    @staticmethod
+    def __truncate_paths(dp, beam_size=10):
         return dict(sorted(list(dp.items()), key=lambda x: -x[1])[:beam_size])
 
     @staticmethod

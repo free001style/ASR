@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
+import wandb
 from src.logger.utils import plot_spectrogram
 from src.metrics.tracker import MetricTracker
 from src.metrics.utils import calc_cer, calc_wer
@@ -117,6 +118,7 @@ class Trainer(BaseTrainer):
                 "predictions": pred,
                 "wer": wer,
                 "cer": cer,
+                "audio": wandb.Audio(audio_path),
             }
         self.writer.add_table(
             "predictions", pd.DataFrame.from_dict(rows, orient="index")
