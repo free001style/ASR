@@ -75,20 +75,19 @@ class CTCTextEncoder:
         return "".join(decoded)
 
     def ctc_beam_search(
-        self, log_probs: torch.Tensor or np.array, beam_size=10
+        self, probs: torch.Tensor or np.array, beam_size=10
     ) -> list[dict[str, float]]:
         """
         Simple CTC beam search.
 
         Args:
-            log_probs (torch.Tensor | np.array): (T x len(vocab)) tensor of token log probability.
+            log_probs (torch.Tensor | np.array): (T x len(vocab)) tensor of token probability.
             beam_size (int): maximum number of beams at each step in decoding.
         Returns:
             output (list[dict]): list of decoded texts with their probabilities.
         """
-        if isinstance(log_probs, torch.Tensor):
-            log_probs = log_probs.detach().cpu().numpy()
-        probs = np.exp(log_probs)
+        if isinstance(probs, torch.Tensor):
+            probs = probs.detach().cpu().numpy()
         dp = {
             ("", self.EMPTY_TOK): 1.0,
         }
@@ -102,20 +101,22 @@ class CTCTextEncoder:
         return dp
 
     def ctc_lm_beam_search(
-        self, log_probs: torch.Tensor or np.array, beam_size=100
+        self, probs: torch.Tensor or np.array, beam_size=100
     ) -> list[dict[str, float]]:
         """
         CTC beam search with LM
 
         Args:
-            log_probs (torch.Tensor | np.array): (T x len(vocab)) tensor of token log probability.
+            probs (torch.Tensor | np.array): (T x len(vocab)) tensor of token probability.
             beam_size (int): maximum number of beams at each step in decoding.
         Returns:
             output (list[dict]): list of decoded text (with probability equal 1).
         """
+        if isinstance(probs, torch.Tensor):
+            probs = probs.detach().cpu().numpy()
         return [
             {
-                "hypothesis": self.decoder.decode(log_probs, beam_size),
+                "hypothesis": self.decoder.decode(probs, beam_size),
                 "probability": 1.0,
             }
         ]

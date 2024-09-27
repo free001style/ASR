@@ -30,6 +30,7 @@ class BaseDataset(Dataset):
         max_text_length=None,
         shuffle_index=False,
         instance_transforms=None,
+        log_scale=True,
     ):
         """
         Args:
@@ -47,6 +48,7 @@ class BaseDataset(Dataset):
             instance_transforms (dict[Callable] | None): transforms that
                 should be applied on the instance. Depend on the
                 tensor name.
+            log_scale (bool): if True, take log of spectrogram
         """
         self._assert_index_is_valid(index)
 
@@ -62,6 +64,7 @@ class BaseDataset(Dataset):
         self.text_encoder = text_encoder
         self.target_sr = target_sr
         self.instance_transforms = instance_transforms
+        self.log_scale = log_scale
 
     def __getitem__(self, ind):
         """
@@ -85,7 +88,6 @@ class BaseDataset(Dataset):
         text_encoded = self.text_encoder.encode(text)
 
         spectrogram = self.get_spectrogram(audio)
-        spectrogram = torch.log(spectrogram + 1e-6)  # TODO
 
         instance_data = {
             "audio": audio,
@@ -126,7 +128,8 @@ class BaseDataset(Dataset):
         Returns:
             spectrogram (Tensor): spectrogram for the audio.
         """
-        return self.instance_transforms["get_spectrogram"](audio)
+        spectrogram = self.instance_transforms["get_spectrogram"](audio)
+        return torch.log(spectrogram + 1e-6) if self.log_scale else spectrogram
 
     def preprocess_data(self, instance_data):
         """

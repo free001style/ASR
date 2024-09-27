@@ -193,8 +193,12 @@ class DeepSpeech2(nn.Module):
             x = gru(x, length)
         x = self.bn(x.transpose(1, 2)).transpose(1, 2).contiguous()
         logits = self.fc(x)  # B x T x n_tokens
-        log_probs = F.log_softmax(logits, dim=-1)
-        return {"log_probs": log_probs, "log_probs_length": length}
+        return {
+            "log_probs": F.log_softmax(logits, dim=-1),
+            "log_probs_length": length,
+            "probs": F.softmax(logits, dim=-1),
+            "probs_length": length,
+        }
 
     def __str__(self):
         """

@@ -91,33 +91,41 @@ class Trainer(BaseTrainer):
         self.writer.add_image("spectrogram", image)
 
     def log_predictions(
-        self, text, log_probs, log_probs_length, audio_path, examples_to_log=10, **batch
+        self, text, probs, probs_length, audio_path, examples_to_log=10, **batch
     ):
-        # TODO add beam search
-        # Note: by improving text encoder and metrics design
-        # this logging can also be improved significantly
-
-        argmax_inds = log_probs.cpu().argmax(-1).numpy()
+        probs = probs.detach().cpu().numpy()
+        argmax_inds = probs.argmax(-1)
         argmax_inds = [
             inds[: int(ind_len)]
-            for inds, ind_len in zip(argmax_inds, log_probs_length.numpy())
+            for inds, ind_len in zip(argmax_inds, probs_length.numpy())
         ]
+        probs = [prob[:length, :] for prob, length in zip(probs, probs_length.numpy())]
         argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
         argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
-        tuples = list(zip(argmax_texts, text, argmax_texts_raw, audio_path))
+        bs_lm_texts = [self.text_encoder.ctc_lm_beam_search(prob) for prob in probs]
+        tuples = list(
+            zip(argmax_texts, bs_lm_texts, text, argmax_texts_raw, audio_path)
+        )
 
         rows = {}
-        for pred, target, raw_pred, audio_path in tuples[:examples_to_log]:
+        for argmax_text, bs_lm_text, target, raw_pred, audio_path in tuples[
+            :examples_to_log
+        ]:
             target = self.text_encoder.normalize_text(target)
-            wer = calc_wer(target, pred) * 100
-            cer = calc_cer(target, pred) * 100
+            wer = calc_wer(target, argmax_text) * 100
+            cer = calc_cer(target, argmax_text) * 100
+            wer_bs = calc_wer(target, bs_lm_text) * 100
+            cer_bs = calc_cer(target, bs_lm_text) * 100
 
             rows[Path(audio_path).name] = {
                 "target": target,
                 "raw prediction": raw_pred,
-                "predictions": pred,
+                "predictions": bs_lm_text,
+                "argmax predictions": argmax_texts,
                 "wer": wer,
                 "cer": cer,
+                "wer_lm_bs": wer_bs,
+                "cer_lm_bs": cer_bs,
                 "audio": wandb.Audio(audio_path),
             }
         self.writer.add_table(
