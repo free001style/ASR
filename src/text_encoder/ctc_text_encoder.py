@@ -102,7 +102,7 @@ class CTCTextEncoder:
         return dp
 
     def ctc_lm_beam_search(
-        self, log_probs: torch.Tensor or np.array, beam_size=10
+        self, log_probs: torch.Tensor or np.array, beam_size=100
     ) -> list[dict[str, float]]:
         """
         CTC beam search with LM

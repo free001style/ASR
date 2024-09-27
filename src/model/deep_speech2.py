@@ -188,7 +188,7 @@ class DeepSpeech2(nn.Module):
         spectrogram = spectrogram.unsqueeze(1)  # add channel dim
         x, length = self.conv(spectrogram, spectrogram_length)  # B x C x F x T
         b, c, f, t = x.shape
-        x = x.view(b, t, c * f)
+        x = x.view(b, c * f, t).transpose(1, 2)  # B x C * F x T
         for gru in self.gru:
             x = gru(x, length)
         x = self.bn(x.transpose(1, 2)).transpose(1, 2).contiguous()
@@ -210,14 +210,3 @@ class DeepSpeech2(nn.Module):
         result_info = result_info + f"\nTrainable parameters: {trainable_parameters}"
 
         return result_info
-
-
-# lst = [100, 99, 98]
-#
-# t = torch.zeros(3, 128, 110)
-# for i in range(3):
-#     t[i, :, :lst[i]] = torch.arange(lst[i]).expand(128, lst[i])
-# print(t.shape)
-#
-# model = DeepSpeech2(128, 28, 768, 7, 0, nn.GRU)
-# print(model)
