@@ -102,7 +102,10 @@ class Trainer(BaseTrainer):
         probs = [prob[:length, :] for prob, length in zip(probs, probs_length.numpy())]
         argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
         argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
-        bs_lm_texts = [self.text_encoder.ctc_lm_beam_search(prob) for prob in probs]
+        bs_lm_texts = [
+            self.text_encoder.ctc_lm_beam_search(prob)[0]["hypothesis"]
+            for prob in probs
+        ]
         tuples = list(
             zip(argmax_texts, bs_lm_texts, text, argmax_texts_raw, audio_path)
         )
@@ -121,7 +124,7 @@ class Trainer(BaseTrainer):
                 "target": target,
                 "raw prediction": raw_pred,
                 "predictions": bs_lm_text,
-                "argmax predictions": argmax_texts,
+                "argmax predictions": argmax_text,
                 "wer": wer,
                 "cer": cer,
                 "wer_lm_bs": wer_bs,

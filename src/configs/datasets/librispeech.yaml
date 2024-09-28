@@ -2,7 +2,7 @@ train:
   _target_: src.datasets.LibrispeechDataset
   part: "train-clean-100"
   max_audio_length: 20.0
-  max_text_length: 200
+  max_text_length: 300
   instance_transforms: ${transforms.instance_transforms.train}
   log_scale: True
 # we filter partitions in one batch test to check the pipeline
@@ -10,7 +10,5 @@ train:
 val:
   _target_: src.datasets.LibrispeechDataset
   part: "test-clean"
-  max_audio_length: 20.0
-  max_text_length: 200
   instance_transforms: ${transforms.instance_transforms.inference}
   log_scale: ${datasets.train.log_scale}
