@@ -1,0 +1,31 @@
+train:
+  get_spectrogram: # special key for getting spectrogram
+    _target_: torchaudio.transforms.MelSpectrogram
+    sample_rate: 16000
+    n_fft: 512
+  audio: # name of the tensor on which we apply transform
+    _target_: torchvision.transforms.v2.RandomApply
+    p: 0.7
+    transforms:
+      - _target_: src.transforms.wav_augs.Gain
+        p: 0.6
+      - _target_: src.transforms.wav_augs.ColoredNoise
+        p: 0.7
+        sample_rate: ${datasets.train.target_sr}
+      - _target_: src.transforms.wav_augs.BandPassFilter
+        p: 0.3
+        sample_rate: ${datasets.train.target_sr}
+      - _target_: src.transforms.wav_augs.BandStopFilter
+        p: 0.3
+        sample_rate: ${datasets.train.target_sr}
+      - _target_: src.transforms.wav_augs.HighPassFilter
+        p: 0.15
+        sample_rate: ${datasets.train.target_sr}
+      - _target_: src.transforms.wav_augs.LowPassFilter
+        p: 0.15
+        sample_rate: ${datasets.train.target_sr}
+inference:
+  get_spectrogram:
+    _target_: torchaudio.transforms.MelSpectrogram
+    sample_rate: 16000
+    n_fft: 512

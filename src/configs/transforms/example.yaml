@@ -1,4 +1,4 @@
 defaults:
-  - batch_transforms: example
-  - instance_transforms: example
+  - batch_transforms: augs
+  - instance_transforms: augs
   - _self_

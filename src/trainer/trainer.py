@@ -91,7 +91,7 @@ class Trainer(BaseTrainer):
         self.writer.add_image("spectrogram", image)
 
     def log_predictions(
-        self, text, probs, probs_length, audio_path, examples_to_log=10, **batch
+            self, text, probs, probs_length, audio_path, examples_to_log=10, **batch
     ):
         probs = probs.detach().cpu().numpy()
         argmax_inds = probs.argmax(-1)
@@ -111,9 +111,7 @@ class Trainer(BaseTrainer):
         )
 
         rows = {}
-        for argmax_text, bs_lm_text, target, raw_pred, audio_path in tuples[
-            :examples_to_log
-        ]:
+        for argmax_text, bs_lm_text, target, raw_pred, audio_path in tuples[:examples_to_log]:
             target = self.text_encoder.normalize_text(target)
             wer = calc_wer(target, argmax_text) * 100
             cer = calc_cer(target, argmax_text) * 100

@@ -21,16 +21,16 @@ class BaseDataset(Dataset):
     """
 
     def __init__(
-        self,
-        index,
-        text_encoder=None,
-        target_sr=16000,
-        limit=None,
-        max_audio_length=None,
-        max_text_length=None,
-        shuffle_index=False,
-        instance_transforms=None,
-        log_scale=True,
+            self,
+            index,
+            text_encoder=None,
+            target_sr=16000,
+            limit=None,
+            max_audio_length=None,
+            max_text_length=None,
+            shuffle_index=False,
+            instance_transforms=None,
+            log_scale=True,
     ):
         """
         Args:
@@ -87,21 +87,16 @@ class BaseDataset(Dataset):
         text = data_dict["text"]
         text_encoded = self.text_encoder.encode(text)
 
-        spectrogram = self.get_spectrogram(audio)
+        instance_data = {"audio": audio}
+        instance_data = self.preprocess_data(instance_data)
+        spectrogram = self.get_spectrogram(instance_data["audio"])
 
-        instance_data = {
-            "audio": audio,
+        instance_data.update({
             "spectrogram": spectrogram,
             "text": text,
             "text_encoded": text_encoded,
             "audio_path": audio_path,
-        }
-
-        # TODO think of how to apply wave augs before calculating spectrogram
-        # Note: you may want to preserve both audio in time domain and
-        # in time-frequency domain for logging
-        instance_data = self.preprocess_data(instance_data)
-
+        })
         return instance_data
 
     def __len__(self):
@@ -156,9 +151,9 @@ class BaseDataset(Dataset):
 
     @staticmethod
     def _filter_records_from_dataset(
-        index: list,
-        max_audio_length,
-        max_text_length,
+            index: list,
+            max_audio_length,
+            max_text_length,
     ) -> list:
         """
         Filter some of the elements from the dataset depending on
@@ -178,7 +173,7 @@ class BaseDataset(Dataset):
         initial_size = len(index)
         if max_audio_length is not None:
             exceeds_audio_length = (
-                np.array([el["audio_len"] for el in index]) >= max_audio_length
+                    np.array([el["audio_len"] for el in index]) >= max_audio_length
             )
             _total = exceeds_audio_length.sum()
             logger.info(
@@ -191,10 +186,10 @@ class BaseDataset(Dataset):
         initial_size = len(index)
         if max_text_length is not None:
             exceeds_text_length = (
-                np.array(
-                    [len(CTCTextEncoder.normalize_text(el["text"])) for el in index]
-                )
-                >= max_text_length
+                    np.array(
+                        [len(CTCTextEncoder.normalize_text(el["text"])) for el in index]
+                    )
+                    >= max_text_length
             )
             _total = exceeds_text_length.sum()
             logger.info(
