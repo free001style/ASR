@@ -28,6 +28,7 @@ class Inferencer(BaseTrainer):
         metrics=None,
         batch_transforms=None,
         skip_model_load=False,
+        only_decode=True,
     ):
         """
         Initialize the Inferencer.
@@ -51,6 +52,7 @@ class Inferencer(BaseTrainer):
                 pre-trained checkpoint path. Set this argument to True if
                 the model desirable weights are defined outside of the
                 Inferencer Class.
+            only_decode (bool): if True, only decode voices to text. If False, calculate metrics.
         """
         assert (
             skip_model_load or config.inferencer.get("from_pretrained") is not None
@@ -86,6 +88,8 @@ class Inferencer(BaseTrainer):
         if not skip_model_load:
             # init model
             self._from_pretrained(config.inferencer.get("from_pretrained"))
+        self.only_decode = only_decode
+        self.current_id = 0
 
     def run_inference(self):
         """
@@ -134,25 +138,33 @@ class Inferencer(BaseTrainer):
                 metrics.update(met.name, met(**batch))
 
         batch_size = batch["probs"].shape[0]
-        current_id = batch_idx * batch_size
 
         for i in range(batch_size):
             # clone because of
             # https://github.com/pytorch/pytorch/issues/1995
             probs = batch["probs"][i].clone()
+            length = batch["probs_length"][i].clone()
             text = batch["text"][i]
-            pred_text = self.text_encoder.ctc_lm_beam_search(probs)[0]["hypothesis"]
+            pred_text = self.text_encoder.ctc_lm_beam_search(probs[:length])[0][
+                "hypothesis"
+            ]
 
-            output_id = current_id + i
+            output_id = self.current_id + i
 
-            output = {
-                "pred_text": pred_text,
-                "text": text,
-            }
+            if self.only_decode:
+                output = {
+                    "pred_text": pred_text,
+                }
+            else:
+                output = {
+                    "pred_text": pred_text,
+                    "text": text,
+                }
             if self.save_path is not None:
                 # you can use safetensors or other lib here
                 # torch.save(output, self.save_path / part / f"output_{output_id}.pth")
-                write_json(output, self.save_path / part / f"output_{output_id}.json")
+                write_json(output, self.save_path / f"output_{output_id}.json")
+        self.current_id += batch_size
         return batch
 
     def _inference_part(self, part, dataloader):
@@ -173,7 +185,7 @@ class Inferencer(BaseTrainer):
 
         # create Save dir
         if self.save_path is not None:
-            (self.save_path / part).mkdir(exist_ok=True, parents=True)
+            (self.save_path).mkdir(exist_ok=True, parents=True)
 
         with torch.no_grad():
             for batch_idx, batch in tqdm(
@@ -188,4 +200,4 @@ class Inferencer(BaseTrainer):
                     metrics=self.evaluation_metrics,
                 )
 
-        return self.evaluation_metrics.result()
+        return self.evaluation_metrics.result() if not self.only_decode else None

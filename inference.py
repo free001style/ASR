@@ -54,6 +54,10 @@ def main(config):
     # save_path for model predictions
     save_path = ROOT_PATH / "data" / "saved" / config.inferencer.save_path
     save_path.mkdir(exist_ok=True, parents=True)
+    try:
+        only_decode = config.datasets.test.transcription_dir is None
+    except:
+        only_decode = False
 
     inferencer = Inferencer(
         model=model,
@@ -65,9 +69,13 @@ def main(config):
         save_path=save_path,
         metrics=metrics,
         skip_model_load=False,
+        only_decode=only_decode,
     )
 
     logs = inferencer.run_inference()
+    if only_decode:
+        print("The voices successfully decoded and saved to {}".format(save_path))
+        return
 
     for part in logs.keys():
         for key, value in logs[part].items():

@@ -1,23 +1,23 @@
 inference:
-  - _target_: src.metrics.ArgmaxCERMetric
-    name: "CER_(Argmax)"
-  - _target_: src.metrics.ArgmaxWERMetric
-    name: "WER_(Argmax)"
-  - _target_: src.metrics.BeamSearchCERMetric
-    name: "CER_(BS+LM)"
+  # - _target_: src.metrics.ArgmaxCERMetric
+  #   name: "CER_(Argmax)"
+  # - _target_: src.metrics.ArgmaxWERMetric
+  #   name: "WER_(Argmax)"
+  # - _target_: src.metrics.BeamSearchCERMetric
+  #   name: "CER_(BS+LM)"
   - _target_: src.metrics.BeamSearchWERMetric
     name: "WER_(BS+LM)"
     beam_size: 100
   - _target_: src.metrics.BeamSearchCERMetric
     name: "CER_(BS-LM)"
     type: "BS-LM"
-  - _target_: src.metrics.BeamSearchWERMetric
-    name: "WER_(BS-LM)"
-    type: "BS-LM"
-    beam_size: 100
-  - _target_: src.metrics.BeamSearchCERMetric
-    name: "CER_(BS)"
-    type: "BS"
-  - _target_: src.metrics.BeamSearchWERMetric
-    name: "WER_(BS)"
-    type: "BS"
+  # - _target_: src.metrics.BeamSearchWERMetric
+  #   name: "WER_(BS-LM)"
+  #   type: "BS-LM"
+  #   beam_size: 100
+  # - _target_: src.metrics.BeamSearchCERMetric
+  #   name: "CER_(BS)"
+  #   type: "BS"
+  # - _target_: src.metrics.BeamSearchWERMetric
+  #   name: "WER_(BS)"
+  #   type: "BS"
