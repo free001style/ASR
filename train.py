@@ -1,5 +1,5 @@
-import warnings
 import os
+import warnings
 
 import hydra
 import torch
@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 os.environ["HYDRA_FULL_ERROR"] = "1"
 
 
-@hydra.main(version_base=None, config_path="src/configs", config_name="baseline")
+@hydra.main(version_base=None, config_path="src/configs", config_name="deepspeech2")
 def main(config):
     """
     Main script for training. Instantiates the model, optimizer, scheduler,

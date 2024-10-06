@@ -1,0 +1,39 @@
+defaults:
+  - model: deepspeech2
+  - writer: wandb
+  - metrics: metrics
+  - datasets: librispeech
+  - dataloader: example
+  - transforms: example
+  - _self_
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: 3e-5
+lr_scheduler:
+  _target_: torch.optim.lr_scheduler.OneCycleLR
+  max_lr: 4e-5
+  pct_start: 0.1
+  steps_per_epoch: ${trainer.epoch_len}
+  epochs: ${trainer.n_epochs}
+  anneal_strategy: cos
+loss_function:
+  _target_: src.loss.CTCLossWrapper
+text_encoder:
+  _target_: src.text_encoder.CTCTextEncoder
+  use_bpe: True
+  alphabet_path: "data/other/tokenizer-wiki.json"
+trainer:
+  log_step: 50
+  n_epochs: 15
+  epoch_len: 200
+  device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
+  resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
+  device: "cuda" # device name or "auto"
+  override: True # if True, will override the previous run with the same name
+  monitor: "min val_WER_(BS_LM)" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
+  save_period: 5 # checkpoint each save_period epochs in addition to the best epoch
+  early_stop: ${trainer.n_epochs} # epochs for early stopping
+  save_dir: "saved"
+  seed: 1
+  max_grad_norm: 10
+  from_pretrained: "saved/part2/checkpoint-epoch145.pth"
