@@ -188,7 +188,7 @@ class DeepSpeech2(nn.Module):
         spectrogram = spectrogram.unsqueeze(1)  # add channel dim
         x, length = self.conv(spectrogram, spectrogram_length)  # B x C x F x T
         b, c, f, t = x.shape
-        x = x.view(b, c * f, t).transpose(1, 2)  # B x C * F x T
+        x = x.view(b, c * f, t).transpose(1, 2)  # B x T x C * F
         for gru in self.gru:
             x = gru(x, length)
         x = self.bn(x.transpose(1, 2)).transpose(1, 2).contiguous()

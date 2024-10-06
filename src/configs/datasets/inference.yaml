@@ -1,0 +1,8 @@
+test:
+#  _target_: src.datasets.LibrispeechDataset
+#  part: "dev-other"
+  _target_: src.datasets.CustomDirAudioDataset
+  audio_dir: "test_data/audio"
+  transcription_dir: "test_data/transcriptions"
+  instance_transforms: ${transforms.instance_transforms.inference}
+  log_scale: True

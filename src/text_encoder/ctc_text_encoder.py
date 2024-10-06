@@ -13,7 +13,9 @@ from src.utils.text_encoder_utils import get_lm
 class CTCTextEncoder:
     EMPTY_TOK = ""
 
-    def __init__(self, use_bpe=False, alphabet_path=None, **kwargs):
+    def __init__(
+        self, use_bpe=False, alphabet_path=None, test_without_lm=False, **kwargs
+    ):
         """
         Args:
             use_bpe (bool): whether to use bpe tokenizer instead of per letter.
@@ -30,9 +32,12 @@ class CTCTextEncoder:
 
         self.ind2char = dict(enumerate(self.vocab))
         self.char2ind = {v: k for k, v in self.ind2char.items()}
+        self.test_without_lm = test_without_lm
 
         lm = get_lm()
         self.decoder = BeamSearchDecoderCTC(Alphabet(self.vocab, False), lm)
+        if test_without_lm:
+            self.decoder_no_lm = BeamSearchDecoderCTC(Alphabet(self.vocab, False), None)
 
     def __len__(self):
         return len(self.vocab)
@@ -81,7 +86,7 @@ class CTCTextEncoder:
         Simple CTC beam search.
 
         Args:
-            log_probs (torch.Tensor | np.array): (T x len(vocab)) tensor of token probability.
+            probs (torch.Tensor | np.array): (T x len(vocab)) tensor of token probability.
             beam_size (int): maximum number of beams at each step in decoding.
         Returns:
             output (list[dict]): list of decoded texts with their probabilities.
@@ -101,10 +106,10 @@ class CTCTextEncoder:
         return dp
 
     def ctc_lm_beam_search(
-        self, probs: torch.Tensor or np.array, beam_size=10
+        self, probs: torch.Tensor or np.array, beam_size=100
     ) -> list[dict[str, float]]:
         """
-        CTC beam search with LM
+        CTC beam search with LM.
 
         Args:
             probs (torch.Tensor | np.array): (T x len(vocab)) tensor of token probability.
@@ -117,6 +122,31 @@ class CTCTextEncoder:
         return [
             {
                 "hypothesis": self.decoder.decode(probs, beam_size),
+                "probability": 1.0,
+            }
+        ]
+
+    def ctc_beam_search_no_lm(
+        self, probs: torch.Tensor or np.array, beam_size=10
+    ) -> list[dict[str, float]]:
+        """
+        CTC beam search without LM.
+
+        Args:
+            probs (torch.Tensor | np.array): (T x len(vocab)) tensor of token probability.
+            beam_size (int): maximum number of beams at each step in decoding.
+        Returns:
+            output (list[dict]): list of decoded text (with probability equal 1).
+        """
+        if not self.test_without_lm:
+            raise ValueError(
+                "Argument test_without_lm should be True to use this function."
+            )
+        if isinstance(probs, torch.Tensor):
+            probs = probs.detach().cpu().numpy()
+        return [
+            {
+                "hypothesis": self.decoder_no_lm.decode(probs, beam_size),
                 "probability": 1.0,
             }
         ]
