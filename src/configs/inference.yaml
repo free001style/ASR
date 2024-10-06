@@ -15,4 +15,4 @@ inferencer:
   device: auto # device name or "auto"
   save_path: "predict" # any name here, can be a dataset name
   seed: 1
-  from_pretrained: "saved/bpe_finetune_with_new_augment_yet_another/model_best.pth" # path to the pretrained model
+  from_pretrained: "data/other/model_best.pth" # path to the pretrained model

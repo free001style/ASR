@@ -23,8 +23,8 @@ def get_lm(alpha=0.5, beta=1.5):
     language_model = LanguageModel(
         kenlm_model,
         unigrams,
-        alpha=alpha,
-        beta=beta,
+        alpha=0.73,
+        beta=1.37,
         unk_score_offset=-10.0,
         score_boundary=True,
     )
@@ -32,7 +32,7 @@ def get_lm(alpha=0.5, beta=1.5):
 
 
 def download_lm():
-    if os.path.exists("data/other/lowercase_3-gram.pruned.1e-7.arp"):
+    if os.path.exists("data/other/lowercase_3-gram.pruned.1e-7.arpa"):
         return
     print("Downloading pruned 3-gram model.")
     lm_url = "http://www.openslr.org/resources/11/3-gram.pruned.1e-7.arpa.gz"
@@ -53,6 +53,6 @@ def download_lm():
     os.makedirs("data/other/", exist_ok=True)
     os.rename(
         "lowercase_3-gram.pruned.1e-7.arpa",
-        "data/other/lowercase_3-gram.pruned.1e-7.arp",
+        "data/other/lowercase_3-gram.pruned.1e-7.arpa",
     )
     print("Downloaded the 3-gram language model.")

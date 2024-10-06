@@ -15,6 +15,7 @@ datasets
 wget
 pyctcdecode
 kenlm
+gdown
 
 black
 isort
