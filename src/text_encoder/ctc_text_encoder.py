@@ -32,7 +32,7 @@ class CTCTextEncoder:
         self.char2ind = {v: k for k, v in self.ind2char.items()}
 
         lm = get_lm()
-        self.decoder = BeamSearchDecoderCTC(Alphabet(self.vocab, use_bpe), lm)
+        self.decoder = BeamSearchDecoderCTC(Alphabet(self.vocab, False), lm)
 
     def __len__(self):
         return len(self.vocab)

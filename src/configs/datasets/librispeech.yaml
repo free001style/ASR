@@ -1,6 +1,7 @@
 train:
   _target_: src.datasets.LibrispeechDataset
   part: "train_all"
+  target_sr: 16000
   max_audio_length: 20.0
   max_text_length: 300
   instance_transforms: ${transforms.instance_transforms.train}
@@ -10,5 +11,6 @@ train:
 val:
   _target_: src.datasets.LibrispeechDataset
   part: "test-clean"
+  target_sr: 16000
   instance_transforms: ${transforms.instance_transforms.inference}
   log_scale: ${datasets.train.log_scale}

@@ -20,8 +20,8 @@ loss_function:
   _target_: src.loss.CTCLossWrapper
 text_encoder:
   _target_: src.text_encoder.CTCTextEncoder
-  use_bpe: False
-  alphabet_path: null
+  use_bpe: True
+  alphabet_path: "data/other/tokenizer-wiki.json"
 trainer:
   log_step: 50
   n_epochs: 150

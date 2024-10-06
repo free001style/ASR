@@ -16,21 +16,21 @@ class BaseTrainer:
     """
 
     def __init__(
-            self,
-            model,
-            criterion,
-            metrics,
-            optimizer,
-            lr_scheduler,
-            text_encoder,
-            config,
-            device,
-            dataloaders,
-            logger,
-            writer,
-            epoch_len=None,
-            skip_oom=True,
-            batch_transforms=None,
+        self,
+        model,
+        criterion,
+        metrics,
+        optimizer,
+        lr_scheduler,
+        text_encoder,
+        config,
+        device,
+        dataloaders,
+        logger,
+        writer,
+        epoch_len=None,
+        skip_oom=True,
+        batch_transforms=None,
     ):
         """
         Args:
@@ -135,11 +135,14 @@ class BaseTrainer:
         # define checkpoint dir and init everything if required
 
         self.checkpoint_dir = (
-                ROOT_PATH / config.trainer.save_dir / config.writer.run_name
+            ROOT_PATH / config.trainer.save_dir / config.writer.run_name
         )
 
         if config.trainer.get("resume_from") is not None:
-            resume_path = self.checkpoint_dir / config.trainer.resume_from
+            # resume_path = self.checkpoint_dir / config.trainer.resume_from
+            resume_path = (
+                ROOT_PATH / config.trainer.save_dir / config.trainer.resume_from
+            )
             self._resume_checkpoint(resume_path)
 
         if config.trainer.get("from_pretrained") is not None:
@@ -206,7 +209,7 @@ class BaseTrainer:
         self.writer.set_step((epoch - 1) * self.epoch_len)
         self.writer.add_scalar("epoch", epoch)
         for batch_idx, batch in enumerate(
-                tqdm(self.train_dataloader, desc="train", total=self.epoch_len)
+            tqdm(self.train_dataloader, desc="train", total=self.epoch_len)
         ):
             try:
                 batch = self.process_batch(
@@ -268,9 +271,9 @@ class BaseTrainer:
         self.evaluation_metrics.reset()
         with torch.no_grad():
             for batch_idx, batch in tqdm(
-                    enumerate(dataloader),
-                    desc=part,
-                    total=len(dataloader),
+                enumerate(dataloader),
+                desc=part,
+                total=len(dataloader),
             ):
                 batch = self.process_batch(
                     batch,
@@ -516,8 +519,8 @@ class BaseTrainer:
 
         # load optimizer state from checkpoint only when optimizer type is not changed.
         if (
-                checkpoint["config"]["optimizer"] != self.config["optimizer"]
-                or checkpoint["config"]["lr_scheduler"] != self.config["lr_scheduler"]
+            checkpoint["config"]["optimizer"] != self.config["optimizer"]
+            or checkpoint["config"]["lr_scheduler"] != self.config["lr_scheduler"]
         ):
             self.logger.warning(
                 "Warning: Optimizer or lr_scheduler given in the config file is different "
@@ -558,16 +561,16 @@ class BaseTrainer:
     @abstractmethod
     def process_batch(self, batch, metrics: MetricTracker):
         """
-            Abstract method. Should be defined in the nested Trainer Class.
+        Abstract method. Should be defined in the nested Trainer Class.
 
-            Run batch through the model, compute metrics, compute loss,
-            and do training step (during training stage).
+        Run batch through the model, compute metrics, compute loss,
+        and do training step (during training stage).
 
-            Args:
-                batch (dict): dict-based batch containing the data from
-                    the dataloader.
-                metrics (MetricTracker): MetricTracker object that computes
-                    and aggregates the metrics. The metrics depend on the type of
-                    the partition (train or inference).
+        Args:
+            batch (dict): dict-based batch containing the data from
+                the dataloader.
+            metrics (MetricTracker): MetricTracker object that computes
+                and aggregates the metrics. The metrics depend on the type of
+                the partition (train or inference).
         """
         return NotImplementedError

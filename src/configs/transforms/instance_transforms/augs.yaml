@@ -4,26 +4,40 @@ train:
     sample_rate: 16000
     n_fft: 512
   audio: # name of the tensor on which we apply transform
-    _target_: torchvision.transforms.v2.RandomApply
-    p: 0.7
+    _target_: src.transforms.RandomApply
+    p: 0.8
     transforms:
-      - _target_: src.transforms.wav_augs.Gain
-        p: 0.6
-      - _target_: src.transforms.wav_augs.ColoredNoise
-        p: 0.7
-        sample_rate: ${datasets.train.target_sr}
-      - _target_: src.transforms.wav_augs.BandPassFilter
-        p: 0.3
-        sample_rate: ${datasets.train.target_sr}
-      - _target_: src.transforms.wav_augs.BandStopFilter
-        p: 0.3
-        sample_rate: ${datasets.train.target_sr}
-      - _target_: src.transforms.wav_augs.HighPassFilter
-        p: 0.15
-        sample_rate: ${datasets.train.target_sr}
-      - _target_: src.transforms.wav_augs.LowPassFilter
-        p: 0.15
-        sample_rate: ${datasets.train.target_sr}
+      _target_: torchvision.transforms.v2.Compose
+      transforms:
+        - _target_: src.transforms.wav_augs.Gain
+          p: 0.6
+        - _target_: src.transforms.wav_augs.ColoredNoise
+          p: 0.7
+          sample_rate: ${datasets.train.target_sr}
+        - _target_: torchvision.transforms.v2.RandomChoice
+          transforms:
+            - _target_: src.transforms.wav_augs.BandPassFilter
+              p: 1.0
+              min_bandwidth_fraction: 1.5
+              min_center_frequency: 2000
+              max_center_frequency: 2001
+              sample_rate: ${datasets.train.target_sr}
+            - _target_: src.transforms.wav_augs.BandStopFilter
+              p: 1.0
+              max_bandwidth_fraction: 1.5
+              min_center_frequency: 2000
+              max_center_frequency: 2001
+              sample_rate: ${datasets.train.target_sr}
+            - _target_: src.transforms.wav_augs.HighPassFilter
+              p: 1.0
+              max_cutoff_freq: 900
+              min_cutoff_freq: 400
+              sample_rate: ${datasets.train.target_sr}
+            - _target_: src.transforms.wav_augs.LowPassFilter
+              p: 1.0
+              max_cutoff_freq: 2000
+              min_cutoff_freq: 750
+              sample_rate: ${datasets.train.target_sr}
 inference:
   get_spectrogram:
     _target_: torchaudio.transforms.MelSpectrogram
