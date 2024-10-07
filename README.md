@@ -128,6 +128,8 @@ The model training contains of 3 stages. To reproduce results, train model using
    python train.py -cn=part3 writer.run_name="part3" dataloader.batch_size=230 datasets.val.part=test-other
    ```
 
+   It takes around 57 hours to train model from scratch on A100 GPU.
+
 ## Final results
 
 This results were obtained using beam search and language model:
