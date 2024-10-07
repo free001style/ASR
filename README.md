@@ -128,7 +128,7 @@ The model training contains of 3 stages. To reproduce results, train model using
    python train.py -cn=part3 writer.run_name="part3" dataloader.batch_size=230 datasets.val.part=test-other
    ```
 
-   It takes around 57 hours to train model from scratch on A100 GPU.
+It takes around 57 hours to train model from scratch on A100 GPU.
 
 ## Final results
 
@@ -136,8 +136,8 @@ This results were obtained using beam search and language model:
 
 ```angular2html
                 WER     CER
-test-other     18.52   9.62
-test-clean     7.47    2.70
+test-other     18.52    9.62
+test-clean     7.47     2.70
 ```
 
 You can see that using language model yields a very significant quality boost:
