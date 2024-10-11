@@ -136,8 +136,8 @@ This results were obtained using beam search and language model:
 
 ```angular2html
                 WER     CER
-test-other     18.52    9.62
-test-clean     7.47     2.70
+test-other     16.96    9.43
+test-clean     6.34     2.58
 ```
 
 You can see that using language model yields a very significant quality boost:
