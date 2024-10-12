@@ -1,11 +1,10 @@
-import json
-
 import torch
 from tqdm.auto import tqdm
 
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
 from src.utils.io_utils import write_json
+from pathlib import Path
 
 
 class Inferencer(BaseTrainer):
@@ -18,17 +17,17 @@ class Inferencer(BaseTrainer):
     """
 
     def __init__(
-        self,
-        model,
-        config,
-        device,
-        dataloaders,
-        text_encoder,
-        save_path,
-        metrics=None,
-        batch_transforms=None,
-        skip_model_load=False,
-        only_decode=True,
+            self,
+            model,
+            config,
+            device,
+            dataloaders,
+            text_encoder,
+            save_path,
+            metrics=None,
+            batch_transforms=None,
+            skip_model_load=False,
+            only_decode=True,
     ):
         """
         Initialize the Inferencer.
@@ -55,7 +54,7 @@ class Inferencer(BaseTrainer):
             only_decode (bool): if True, only decode voices to text. If False, calculate metrics.
         """
         assert (
-            skip_model_load or config.inferencer.get("from_pretrained") is not None
+                skip_model_load or config.inferencer.get("from_pretrained") is not None
         ), "Provide checkpoint or set skip_model_load=True"
 
         self.config = config
@@ -145,6 +144,7 @@ class Inferencer(BaseTrainer):
             probs = batch["probs"][i].clone()
             length = batch["probs_length"][i].clone()
             text = batch["text"][i]
+            path = batch["audio_path"][i]
             pred_text = self.text_encoder.ctc_lm_beam_search(probs[:length])[0][
                 "hypothesis"
             ]
@@ -163,7 +163,7 @@ class Inferencer(BaseTrainer):
             if self.save_path is not None:
                 # you can use safetensors or other lib here
                 # torch.save(output, self.save_path / part / f"output_{output_id}.pth")
-                write_json(output, self.save_path / f"output_{output_id}.json")
+                write_json(output, self.save_path / f"output_{str(Path(path).stem)}.json")
         self.current_id += batch_size
         return batch
 
@@ -189,9 +189,9 @@ class Inferencer(BaseTrainer):
 
         with torch.no_grad():
             for batch_idx, batch in tqdm(
-                enumerate(dataloader),
-                desc=part,
-                total=len(dataloader),
+                    enumerate(dataloader),
+                    desc=part,
+                    total=len(dataloader),
             ):
                 batch = self.process_batch(
                     batch_idx=batch_idx,
